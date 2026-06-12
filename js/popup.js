@@ -1,5 +1,8 @@
 // ── Helpers ────────────────────────────────────────────────────────────────
 function pad(n) { return n < 10 ? '0' + n : '' + n; }
+function todayKey(d = new Date()) {
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+}
 function minToHHMM(m) {
   const a = Math.abs(Math.round(m));
   return pad(Math.floor(a / 60)) + ':' + pad(a % 60);
@@ -33,6 +36,19 @@ function openSite() {
 function setContent(html) {
   document.getElementById('content').innerHTML = html;
 }
+
+// ── Inline SVG icons (consistent stroke style, tinted via CSS) ───────────────
+const SVG = {
+  alert:    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+  building: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"/><path d="M9 7h2M9 11h2M9 15h2M13 7h2M13 11h2M13 15h2"/></svg>`,
+  sunrise:  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 18a5 5 0 0 0-10 0"/><line x1="12" y1="2" x2="12" y2="9"/><line x1="4.22" y1="10.22" x2="5.64" y2="11.64"/><line x1="1" y1="18" x2="3" y2="18"/><line x1="21" y1="18" x2="23" y2="18"/><line x1="18.36" y1="11.64" x2="19.78" y2="10.22"/><line x1="23" y1="22" x2="1" y2="22"/><polyline points="8 6 12 2 16 6"/></svg>`,
+  lock:     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
+  clock:    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 13.5"/></svg>`,
+  wifi:     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>`
+};
+function stateIcon(name, color) {
+  return `<div class="state-icon ${color}">${SVG[name]}</div>`;
+}
 function showLoading() {
   stopTick();
   document.getElementById('badge').style.display = 'none';
@@ -43,7 +59,7 @@ function showNotOnSite() {
   document.getElementById('badge').style.display = 'none';
   setContent(`
     <div class="not-on-site">
-      <div class="icon">🏢</div>
+      ${stateIcon('building', 'blue')}
       <h3>Not on ManekTech</h3>
       <p>Open the attendance page first,<br>then click this icon again.</p>
       <button class="btn" id="ob">Open Attendance Page</button>
@@ -56,7 +72,7 @@ function showError(msg, canRetry = false) {
   document.getElementById('badge').style.display = 'none';
   setContent(`
     <div class="error-box">
-      <div class="error-icon">⚠️</div>
+      ${stateIcon('alert', 'amber')}
       <div class="error-msg">${msg}</div>
       ${canRetry ? `<button class="btn btn-secondary" id="retryBtn" style="margin-bottom:8px">Retry</button>` : ''}
       <button class="btn" id="ob">Open Attendance Page</button>
@@ -69,7 +85,7 @@ function showSessionExpired() {
   document.getElementById('badge').style.display = 'none';
   setContent(`
     <div class="error-box">
-      <div class="error-icon">🔒</div>
+      ${stateIcon('lock', 'red')}
       <div class="error-msg">Session expired. Please log in again.</div>
       <button class="btn" id="ob">Refresh &amp; Login</button>
     </div>`);
@@ -92,12 +108,94 @@ function handleSessionExpired() {
   showSessionExpired();
 }
 
+// New-day empty state — shown when the only data we have is from a previous day.
+function showNewDay() {
+  stopTick();
+  document.getElementById('badge').style.display = 'none';
+  setContent(`
+    <div class="not-on-site">
+      ${stateIcon('sunrise', 'amber')}
+      <h3>New day</h3>
+      <p>Yesterday's timer was cleared.<br>Open the attendance page to start today.</p>
+      <button class="btn" id="ob">Open Attendance Page</button>
+      <div class="site-url">mtworks.manektech.com/inout-summary.aspx</div>
+    </div>`);
+  document.getElementById('ob').onclick = openSite;
+}
+
+// Local day changed while data was live → drop stale data, clear badge, refetch.
+function handleDayRollover() {
+  stopTick();
+  rawData      = null;
+  notified5min = false;
+  notifiedDone = false;
+  try { chrome.runtime.sendMessage({ type: 'CLEAR_DATA' }); } catch (_) {}
+  loadData(false); // on-site → today's data; off-site → new-day state
+}
+
+// First run — member ID never captured yet (never visited attendance page).
+function showFirstRun() {
+  stopTick();
+  document.getElementById('badge').style.display = 'none';
+  setContent(`
+    <div class="not-on-site">
+      ${stateIcon('building', 'blue')}
+      <h3>Quick setup</h3>
+      <p>Open the attendance page once so the timer can find your member ID.<br>After that it works on every ManekTech page.</p>
+      <button class="btn" id="ob">Open Attendance Page</button>
+      <div class="site-url">mtworks.manektech.com/inout-summary.aspx</div>
+    </div>`);
+  document.getElementById('ob').onclick = openSite;
+}
+
+// No punches recorded for today yet.
+function showNoSessions() {
+  stopTick();
+  document.getElementById('badge').style.display = 'none';
+  setContent(`
+    <div class="not-on-site">
+      ${stateIcon('clock', 'amber')}
+      <h3>No punches yet</h3>
+      <p>You haven't punched in today.<br>Punch in and the timer starts automatically.</p>
+      <button class="btn btn-secondary" id="retryBtn" style="margin-bottom:8px">Retry</button>
+      <button class="btn" id="ob">Open Attendance Page</button>
+    </div>`);
+  document.getElementById('ob').onclick = openSite;
+  document.getElementById('retryBtn').onclick = () => loadData(false);
+}
+
+// Map a page-fetcher / popup error code to a friendly, on-brand screen.
+function showErrorState(code, detail) {
+  switch (code) {
+    case 'first_run':   return showFirstRun();
+    case 'no_sessions': return showNoSessions();
+    case 'api_error':
+      return showError("Couldn't reach ManekTech. Check your connection, then retry.", true);
+    case 'load_failed':
+      return showError('No data came back. Open the attendance page and retry.', true);
+    case 'exec_failed':
+      return showError("Couldn't read this page. Open the attendance page and retry.", true);
+    default:
+      return showError('Something went wrong. Please retry.', true);
+  }
+}
+
 // ── Offline cache ──────────────────────────────────────────────────────────
 function saveCachedData(data) {
   try { localStorage.setItem('et_cache', JSON.stringify(data)); } catch (_) {}
 }
 function loadCachedData() {
   try { return JSON.parse(localStorage.getItem('et_cache') || 'null'); } catch (_) { return null; }
+}
+// Render today's cached sessions when a fresh fetch couldn't get them.
+// Returns true if cached data was shown.
+function serveCachedToday(silent) {
+  const cached = loadCachedData();
+  if (!(cached?.sessions?.length && cached.dayKey === todayKey())) return false;
+  rawData = { ...cached, _offline: true };
+  if (silent && document.getElementById('liveWorked')) tick();
+  else startTick();
+  return true;
 }
 
 // ── Copy exit time to clipboard ─────────────────────────────────────────────
@@ -174,6 +272,8 @@ function startTick() {
 
 function tick() {
   if (!rawData) return;
+  // Midnight passed while popup/data was alive → stale, reset for the new day.
+  if (rawData.dayKey && rawData.dayKey !== todayKey()) { handleDayRollover(); return; }
   const { sessions, targetMin } = rawData;
 
   const nowMs  = Date.now();
@@ -225,7 +325,7 @@ function tick() {
     const varSign = variSec >= 0 ? '+' : '-';
     updateVal('liveVariation',
       varSign + secToHHMMSS(Math.abs(variSec)),
-      'rl-val ' + (variSec >= 0 ? 'green' : 'red')
+      'stat-val ' + (variSec >= 0 ? 'green' : 'red')
     );
     document.getElementById('liveTime').textContent = new Date().toLocaleTimeString();
 
@@ -344,9 +444,9 @@ function renderFull(sessions, workedSec, breakSec, remainSec, variSec, hasOpen, 
       'SL-unapproved':   'Sick Leave (Pending)',
       uninformed: 'Uninformed', WFH: 'Work From Home', OT: 'OT'
     };
-    const leaveRows = ms.leaveTally
+    const leaveChips = ms.leaveTally
       ? Object.entries(ms.leaveTally).map(([k, v]) =>
-          `<div class="rl-row"><span class="rl-lbl">${leaveLabels[k] || k}</span><span class="rl-val">${v}</span></div>`
+          `<span class="chip">${leaveLabels[k] || k}<b>${v}</b></span>`
         ).join('') : '';
 
     const mv = ms.monthlyVariationMin;
@@ -354,13 +454,15 @@ function renderFull(sessions, workedSec, breakSec, remainSec, variSec, hasOpen, 
 
     monthHtml = `
         <div class="rl-divider">${ms.monthName || 'This Month'}</div>
-        <div class="rl-row"><span class="rl-lbl">Working Days</span><span class="rl-val">${ms.workingDays}</span></div>
-        <div class="rl-row"><span class="rl-lbl">Present Days</span><span class="rl-val green">${ms.presentDays}</span></div>
-        <div class="rl-row"><span class="rl-lbl">Attendance</span><span class="rl-val blue">${ms.pct}%</span></div>
-        ${mv !== undefined ? `<div class="rl-row"><span class="rl-lbl">Monthly Extra</span><span class="rl-val ${mvClass}">${mv >= 0 ? '+' : '-'}${minToHHMM(Math.abs(mv))}</span></div>` : ''}
-        ${ms.ot ? `<div class="rl-row"><span class="rl-lbl">OT Days</span><span class="rl-val amber">${ms.ot}</span></div>` : ''}
-        ${ms.lateCount ? `<div class="rl-row"><span class="rl-lbl">Late Days</span><span class="rl-val red">${ms.lateCount}</span></div>` : ''}
-        ${leaveRows}`;
+        <div class="stat-grid">
+          <div class="stat-card"><div class="stat-val">${ms.workingDays}</div><div class="stat-lbl">Working Days</div></div>
+          <div class="stat-card"><div class="stat-val green">${ms.presentDays}</div><div class="stat-lbl">Present Days</div></div>
+          <div class="stat-card"><div class="stat-val blue">${ms.pct}%</div><div class="stat-lbl">Attendance</div></div>
+          ${mv !== undefined ? `<div class="stat-card"><div class="stat-val ${mvClass}">${mv >= 0 ? '+' : '-'}${minToHHMM(Math.abs(mv))}</div><div class="stat-lbl">Monthly Extra</div></div>` : ''}
+          ${ms.ot ? `<div class="stat-card"><div class="stat-val amber">${ms.ot}</div><div class="stat-lbl">OT Days</div></div>` : ''}
+          ${ms.lateCount ? `<div class="stat-card"><div class="stat-val red">${ms.lateCount}</div><div class="stat-lbl">Late Days</div></div>` : ''}
+        </div>
+        ${leaveChips ? `<div class="chips">${leaveChips}</div>` : ''}`;
   }
 
   const now = new Date();
@@ -404,25 +506,25 @@ function renderFull(sessions, workedSec, breakSec, remainSec, variSec, hasOpen, 
       </div>
     </div>
 
-    <div class="row-list fade-in">
-      <div class="rl-row">
-        <span class="rl-lbl">Worked</span>
-        <span class="rl-val blue" id="liveWorked2">${minToHHMM(workedSec / 60)}</span>
+    <div class="stat-grid fade-in">
+      <div class="stat-card">
+        <div class="stat-val blue" id="liveWorked2">${minToHHMM(workedSec / 60)}</div>
+        <div class="stat-lbl">Worked</div>
       </div>
-      <div class="rl-row">
-        <span class="rl-lbl">Break</span>
-        <span class="rl-val muted" id="liveBreak">${minToHHMM(breakSec / 60)}</span>
+      <div class="stat-card">
+        <div class="stat-val muted" id="liveBreak">${minToHHMM(breakSec / 60)}</div>
+        <div class="stat-lbl">Break</div>
       </div>
-      <div class="rl-row">
-        <span class="rl-lbl">+/− Today</span>
-        <span class="rl-val ${varClass}" id="liveVariation">${varSign}${secToHHMMSS(Math.abs(variSec))}</span>
+      <div class="stat-card">
+        <div class="stat-val ${varClass}" id="liveVariation">${varSign}${secToHHMMSS(Math.abs(variSec))}</div>
+        <div class="stat-lbl">+/− Today</div>
       </div>
-      <div class="rl-row ${isHalfDay ? 'rl-highlight' : ''}">
-        <span class="rl-lbl">Half Day Exit</span>
-        <span class="rl-val amber">${halfExitStr}</span>
+      <div class="stat-card ${isHalfDay ? 'hl' : ''}">
+        <div class="stat-val amber">${halfExitStr}</div>
+        <div class="stat-lbl">Half Day Exit</div>
       </div>
-      ${monthHtml}
     </div>
+    ${monthHtml}
 
     <div class="row-list fade-in" id="sessionsBlock" style="display:${showSessions ? 'block' : 'none'}">
       <div class="month-header"><span class="month-title">Today's Sessions</span></div>
@@ -467,15 +569,29 @@ async function loadData(silent = false) {
   const refreshBtn = document.getElementById('refreshBtn');
   if (refreshBtn) refreshBtn.classList.add('spinning');
 
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab || !tab.url || !tab.url.includes('mtworks.manektech.com')) {
+  // Prefer the active tab if it's on ManekTech; otherwise reuse ANY open
+  // ManekTech tab (even a background one). The stored member ID lets the fetch
+  // run from any page, so the timer keeps working — and picks up new punches —
+  // no matter which page you're looking at.
+  const [active] = await chrome.tabs.query({ active: true, currentWindow: true });
+  let tab = (active && active.url && active.url.includes('mtworks.manektech.com')) ? active : null;
+  if (!tab) {
+    try {
+      const mt = await chrome.tabs.query({ url: '*://mtworks.manektech.com/*' });
+      tab = mt[0] || null;
+    } catch (_) {}
+  }
+
+  if (!tab) {
+    // No ManekTech tab open anywhere → show today's cached data if we have it.
     if (refreshBtn) refreshBtn.classList.remove('spinning');
     if (!silent) {
-      // Try offline cache
       const cached = loadCachedData();
-      if (cached) {
+      if (cached && cached.dayKey === todayKey()) {
         rawData = { ...cached, _offline: true };
         startTick();
+      } else if (cached) {
+        showNewDay();
       } else {
         showNotOnSite();
       }
@@ -491,7 +607,7 @@ async function loadData(silent = false) {
     });
   } catch (e) {
     if (refreshBtn) refreshBtn.classList.remove('spinning');
-    if (!silent) showError('Could not run on this page: ' + e.message, true);
+    if (!silent) showErrorState('exec_failed');
     return;
   }
 
@@ -501,11 +617,31 @@ async function loadData(silent = false) {
 
   // Terminal — handle even during silent auto-refresh so the timer/badge
   // stop ticking on stale data the moment the session dies.
-  if (result?.error === 'session_expired')  { handleSessionExpired(); return; }
+  if (result?.error === 'session_expired') { handleSessionExpired(); return; }
 
-  if (!result)                              { if (!silent) showError('No data returned from page.', true); return; }
-  if (result.error)                         { if (!silent) showError(result.error, true); return; }
-  if (!result.sessions?.length)             { if (!silent) showError('No sessions found for today.', true); return; }
+  if (!result) {
+    if (!serveCachedToday(silent)) { if (!silent) showErrorState('load_failed'); }
+    return;
+  }
+  if (result.error) {
+    // Transient miss (e.g. read off a non-summary page) — keep today's cached
+    // data on screen instead of flashing an error.
+    if (serveCachedToday(silent)) return;
+    if (!silent) showErrorState(result.error, result.detail);
+    return;
+  }
+  if (!result.sessions?.length) {
+    if (serveCachedToday(silent)) return;
+    if (!silent) showErrorState('no_sessions');
+    return;
+  }
+
+  // Keep the monthly summary visible even when this fetch (off the summary
+  // page) didn't include it.
+  if (!result.monthlySummary) {
+    const cached = loadCachedData();
+    if (cached?.monthlySummary) result.monthlySummary = cached.monthlySummary;
+  }
 
   rawData = result;
   saveCachedData(result);
@@ -513,7 +649,7 @@ async function loadData(silent = false) {
   try {
     chrome.runtime.sendMessage({
       type: 'STORE_DATA',
-      data: { sessions: result.sessions, targetMin: result.targetMin }
+      data: { sessions: result.sessions, targetMin: result.targetMin, dayKey: result.dayKey }
     });
   } catch (_) {}
 

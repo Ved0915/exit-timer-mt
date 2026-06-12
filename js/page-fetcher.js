@@ -1,24 +1,39 @@
 (async () => {
   function pad(n) { return n < 10 ? '0' + n : '' + n; }
 
+  // Member ID is fixed per user. Discover it once, persist to the site's
+  // localStorage (shared across every ManekTech page), then reuse it everywhere
+  // so the timer works on any page — not just the attendance page.
+  const MEM_KEY = 'et_memberID';
   let memberID = null;
   if (typeof MemberID !== 'undefined' && MemberID) memberID = MemberID;
   if (!memberID) { const s = document.getElementById('content_ddlMember'); if (s && s.value) memberID = s.value; }
   if (!memberID) { const m = location.search.match(/memberid=(\d+)/i); if (m) memberID = m[1]; }
-  if (!memberID) {
-    // Logged out? Login/default page or logout mode → treat as session expired.
+
+  if (memberID) {
+    // Found on this page → remember for future visits to other pages.
+    try { localStorage.setItem(MEM_KEY, String(memberID)); } catch (_) {}
+  } else {
+    // Logged out? Don't reuse a stale ID to render data on a login screen.
     const onLoginPage =
       /default\.aspx/i.test(location.pathname) ||
       /mode=logout/i.test(location.search) ||
       !!document.querySelector('input[type="password"]') ||
       !!document.getElementById('txtPassword');
     if (onLoginPage) return { error: 'session_expired' };
-    return { error: 'Member ID not found. Please open the ManekTech attendance page.' };
+
+    // Fall back to the ID saved from a previous attendance-page visit.
+    try { memberID = localStorage.getItem(MEM_KEY) || null; } catch (_) {}
+
+    // Truly first run — never visited the attendance page yet.
+    if (!memberID) return { error: 'first_run' };
   }
 
   const now = new Date();
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const inDateTime = months[now.getMonth()] + ' ' + now.getDate() + ' ' + now.getFullYear();
+  // Date this data belongs to — consumers drop it once the local day rolls over.
+  const dayKey = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate());
 
   let list;
   try {
@@ -38,10 +53,10 @@
     const json = await resp.json();
     list = JSON.parse(json.d);
   } catch (e) {
-    return { error: 'API error: ' + e.message };
+    return { error: 'api_error', detail: e.message };
   }
 
-  if (!list || !list.length) return { error: 'No sessions found for today. Have you punched in?' };
+  if (!list || !list.length) return { error: 'no_sessions' };
 
   // Return raw sessions with epoch timestamps so popup.js can tick live
   const sessions = [];
@@ -143,5 +158,5 @@
     }
   } catch(_) {}
 
-  return { sessions, targetMin, monthlySummary, fetchedAt: Date.now() };
+  return { sessions, targetMin, monthlySummary, fetchedAt: Date.now(), dayKey };
 })();

@@ -17,6 +17,10 @@ async function loadState() {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function pad(n) { return n < 10 ? '0' + n : '' + n; }
+function todayKey() {
+  const d = new Date();
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+}
 
 function calcRemain(sessions, targetMin) {
   const nowMs  = Date.now();
@@ -32,22 +36,15 @@ function calcRemain(sessions, targetMin) {
 }
 
 // ── Badge ─────────────────────────────────────────────────────────────────────
-async function refreshBadge() {
-  const state = await loadState();
-  if (!state) {
-    chrome.action.setBadgeText({ text: '' });
-    return;
-  }
-
-  const { remainSec, hasOpen } = calcRemain(state.sessions, state.targetMin);
-
+// Single source of truth for badge text/color — used by both the alarm refresh
+// and the popup's live BADGE_UPDATE messages.
+function paintBadge(remainSec, hasOpen) {
   if (remainSec <= 0) {
     chrome.action.setBadgeText({ text: 'DONE' });
     chrome.action.setBadgeBackgroundColor({ color: '#1b9954' });
   } else if (hasOpen) {
     const h = Math.floor(remainSec / 3600);
     const m = Math.floor((remainSec % 3600) / 60);
-    const s = Math.floor(remainSec % 60);
     const text = remainSec <= 60 ? `${Math.ceil(remainSec)}s` : h > 0 ? `${h}:${pad(m)}` : `${m}m`;
     chrome.action.setBadgeText({ text });
     chrome.action.setBadgeBackgroundColor({ color: remainSec <= 60 ? '#e05c2a' : '#2d6fd4' });
@@ -55,6 +52,25 @@ async function refreshBadge() {
     chrome.action.setBadgeText({ text: '⏸' });
     chrome.action.setBadgeBackgroundColor({ color: '#3d4260' });
   }
+}
+
+async function refreshBadge() {
+  const state = await loadState();
+  if (!state) {
+    chrome.action.setBadgeText({ text: '' });
+    return;
+  }
+
+  // Day rolled over — yesterday's data is stale. Wipe it and show nothing until
+  // today's sessions are fetched, so an old open session can't tick across midnight.
+  if (state.dayKey && state.dayKey !== todayKey()) {
+    chrome.storage.local.remove('bgState');
+    chrome.action.setBadgeText({ text: '' });
+    return;
+  }
+
+  const { remainSec, hasOpen } = calcRemain(state.sessions, state.targetMin);
+  paintBadge(remainSec, hasOpen);
 }
 
 // ── Offscreen document (keeps service worker alive) ───────────────────────────
@@ -97,20 +113,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   }
   // Popup ticks badge via message — avoids race with background's refreshBadge
   if (msg.type === 'BADGE_UPDATE') {
-    const { remainSec, hasOpen } = msg;
-    if (remainSec <= 0) {
-      chrome.action.setBadgeText({ text: 'DONE' });
-      chrome.action.setBadgeBackgroundColor({ color: '#1b9954' });
-    } else if (hasOpen) {
-      const h = Math.floor(remainSec / 3600);
-      const m = Math.floor((remainSec % 3600) / 60);
-      const text = remainSec <= 60 ? `${Math.ceil(remainSec)}s` : h > 0 ? `${h}:${pad(m)}` : `${m}m`;
-      chrome.action.setBadgeText({ text });
-      chrome.action.setBadgeBackgroundColor({ color: remainSec <= 60 ? '#e05c2a' : '#2d6fd4' });
-    } else {
-      chrome.action.setBadgeText({ text: '⏸' });
-      chrome.action.setBadgeBackgroundColor({ color: '#3d4260' });
-    }
+    paintBadge(msg.remainSec, msg.hasOpen);
   }
   // Session expired / logout — drop stored state so the badge stops ticking.
   if (msg.type === 'CLEAR_DATA') {
