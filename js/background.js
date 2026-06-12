@@ -96,11 +96,11 @@ async function checkNotifications(remainSec, hasOpen) {
   if (!n || n.dayKey !== today) n = { dayKey: today };
 
   // Fire only the most-urgent newly-crossed threshold this tick.
-  let message = null;
-  if      (remainSec <= 0   && !n.done) { n.done = true; message = 'Target reached — you can leave now! 🎉'; }
-  else if (remainSec <= 60  && !n.min1) { n.min1 = true; message = 'About 1 minute left until you can leave.'; }
-  else if (remainSec <= 120 && !n.min2) { n.min2 = true; message = 'About 2 minutes left until you can leave.'; }
-  else if (remainSec <= 300 && !n.min5) { n.min5 = true; message = 'About 5 minutes left until you can leave.'; }
+  let message = null, nid = null;
+  if      (remainSec <= 0   && !n.done) { n.done = true; nid = 'et_done'; message = 'Target reached — you can leave now! 🎉'; }
+  else if (remainSec <= 60  && !n.min1) { n.min1 = true; nid = 'et_min1'; message = 'About 1 minute left until you can leave.'; }
+  else if (remainSec <= 120 && !n.min2) { n.min2 = true; nid = 'et_min2'; message = 'About 2 minutes left until you can leave.'; }
+  else if (remainSec <= 300 && !n.min5) { n.min5 = true; nid = 'et_min5'; message = 'About 5 minutes left until you can leave.'; }
 
   // Mark already-passed thresholds as fired so they don't pop late.
   if (remainSec <= 300) n.min5 = true;
@@ -110,8 +110,13 @@ async function checkNotifications(remainSec, hasOpen) {
 
   saveNotify(n);
   if (message) {
-    chrome.notifications.create('et_note', {
-      type: 'basic', iconUrl: 'icons/icon128.png', title: 'Exit Timer', message
+    chrome.notifications.create(nid, {
+      type: 'basic',
+      iconUrl: chrome.runtime.getURL('icons/icon128.png'), // absolute URL — relative can silently fail in MV3
+      title: 'Exit Timer',
+      message,
+      priority: 2,
+      requireInteraction: remainSec <= 0
     });
   }
 }
@@ -154,9 +159,11 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     saveState(state);
     sendResponse({ ok: true });
   }
-  // Popup ticks badge via message — avoids race with background's refreshBadge
+  // Popup ticks badge via message — avoids race with background's refreshBadge.
+  // Also drive notifications here so they fire instantly while the popup is open.
   if (msg.type === 'BADGE_UPDATE') {
     paintBadge(msg.remainSec, msg.hasOpen);
+    checkNotifications(msg.remainSec, msg.hasOpen);
   }
   // Session expired / logout — drop stored state so the badge stops ticking.
   if (msg.type === 'CLEAR_DATA') {
@@ -173,6 +180,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
 // ── Startup ───────────────────────────────────────────────────────────────────
 chrome.runtime.onInstalled.addListener(async () => {
+  chrome.storage.local.remove('notifyState'); // re-arm thresholds on reload/update
   await ensureAlarm();
   await ensureOffscreen();
   await refreshBadge();
