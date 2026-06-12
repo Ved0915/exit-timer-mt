@@ -43,16 +43,16 @@ function paintBadge(remainSec, hasOpen) {
   try { chrome.action.setBadgeTextColor({ color: '#ffffff' }); } catch (_) {}
   if (remainSec <= 0) {
     chrome.action.setBadgeText({ text: 'DONE' });
-    chrome.action.setBadgeBackgroundColor({ color: '#1b9954' });
+    chrome.action.setBadgeBackgroundColor({ color: '#0f9d58' });   // green
   } else if (hasOpen) {
     const h = Math.floor(remainSec / 3600);
     const m = Math.floor((remainSec % 3600) / 60);
     const text = remainSec <= 60 ? `${Math.ceil(remainSec)}s` : h > 0 ? `${h}:${pad(m)}` : `${m}m`;
     chrome.action.setBadgeText({ text });
-    chrome.action.setBadgeBackgroundColor({ color: remainSec <= 60 ? '#b3160f' : '#d3302a' });
+    chrome.action.setBadgeBackgroundColor({ color: remainSec <= 60 ? '#c8861a' : '#008899' }); // teal, gold when <=60s
   } else {
     chrome.action.setBadgeText({ text: '⏸' });
-    chrome.action.setBadgeBackgroundColor({ color: '#a8761a' });
+    chrome.action.setBadgeBackgroundColor({ color: '#a8761a' });   // gold
   }
 }
 
