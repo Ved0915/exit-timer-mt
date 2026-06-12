@@ -47,10 +47,10 @@ function paintBadge(remainSec, hasOpen) {
     const m = Math.floor((remainSec % 3600) / 60);
     const text = remainSec <= 60 ? `${Math.ceil(remainSec)}s` : h > 0 ? `${h}:${pad(m)}` : `${m}m`;
     chrome.action.setBadgeText({ text });
-    chrome.action.setBadgeBackgroundColor({ color: remainSec <= 60 ? '#8a0f16' : '#c11722' });
+    chrome.action.setBadgeBackgroundColor({ color: remainSec <= 60 ? '#c0392b' : '#2f5fc0' });
   } else {
     chrome.action.setBadgeText({ text: '⏸' });
-    chrome.action.setBadgeBackgroundColor({ color: '#3d4260' });
+    chrome.action.setBadgeBackgroundColor({ color: '#a8761a' });
   }
 }
 

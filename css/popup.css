@@ -12,25 +12,25 @@
   --text3:       #3e4568;
   --sep:         rgba(255,255,255,0.055);
 
-  /* Brand accent — ManekTech red (replaces the old blue accent) */
-  --blue:        #ef4b57;
-  --blue-d:      #c11722;
-  --blue-bg:     rgba(239,75,87,0.12);
-  --blue-glow:   rgba(239,75,87,0.24);
+  /* Accent — navy blue */
+  --blue:        #5b8def;
+  --blue-d:      #2f5fc0;
+  --blue-bg:     rgba(91,141,239,0.12);
+  --blue-glow:   rgba(91,141,239,0.24);
 
   --green:       #30d47e;
   --green-d:     #1b9954;
   --green-bg:    rgba(48,212,126,0.11);
   --green-glow:  rgba(48,212,126,0.22);
 
-  --red:         #ff5c72;
-  --red-bg:      rgba(255,92,114,0.11);
-  --red-glow:    rgba(255,92,114,0.22);
+  --red:         #e8615b;
+  --red-bg:      rgba(232,97,91,0.12);
+  --red-glow:    rgba(232,97,91,0.24);
 
-  --amber:       #f5a623;
-  --amber-d:     #b87600;
-  --amber-bg:    rgba(245,166,35,0.11);
-  --amber-glow:  rgba(245,166,35,0.22);
+  --amber:       #f0b429;
+  --amber-d:     #b5851a;
+  --amber-bg:    rgba(240,180,41,0.12);
+  --amber-glow:  rgba(240,180,41,0.24);
 
   --r:  9px;
   --r2: 7px;
@@ -41,27 +41,27 @@
     --bg:#f1f3fb;--bg2:#ffffff;--bg3:#e8ecf7;--bg4:#dde3f2;--bg5:#d3d9ee;
     --text:#0c0e1a;--text2:#4a5278;--text3:#9aa3c8;
     --sep:rgba(0,0,0,0.07);
-    --blue:#d11f27;--blue-d:#a81820;--blue-bg:rgba(209,31,39,0.10);--blue-glow:rgba(209,31,39,0.2);
+    --blue:#2a5bc0;--blue-d:#1e468f;--blue-bg:rgba(42,91,192,0.10);--blue-glow:rgba(42,91,192,0.2);
     --green:#15803d;--green-d:#0f6030;--green-bg:rgba(21,128,61,0.09);--green-glow:rgba(21,128,61,0.2);
-    --red:#dc2626;--red-bg:rgba(220,38,38,0.09);--red-glow:rgba(220,38,38,0.2);
-    --amber:#c97a00;--amber-d:#9e5f00;--amber-bg:rgba(201,122,0,0.09);--amber-glow:rgba(201,122,0,0.2);
+    --red:#d23b3b;--red-bg:rgba(210,59,59,0.10);--red-glow:rgba(210,59,59,0.2);
+    --amber:#b8860b;--amber-d:#8a6508;--amber-bg:rgba(184,134,11,0.10);--amber-glow:rgba(184,134,11,0.2);
   }
 }
 :root[data-theme="dark"] {
   --bg:#0c0e1a;--bg2:#12152a;--bg3:#191d32;--bg4:#20253e;--bg5:#252a45;
   --text:#eceef8;--text2:#818aaa;--text3:#3e4568;--sep:rgba(255,255,255,0.055);
-  --blue:#ef4b57;--blue-d:#c11722;--blue-bg:rgba(239,75,87,0.12);--blue-glow:rgba(239,75,87,0.24);
+  --blue:#5b8def;--blue-d:#2f5fc0;--blue-bg:rgba(91,141,239,0.12);--blue-glow:rgba(91,141,239,0.24);
   --green:#30d47e;--green-d:#1b9954;--green-bg:rgba(48,212,126,0.11);--green-glow:rgba(48,212,126,0.22);
-  --red:#ff5c72;--red-bg:rgba(255,92,114,0.11);--red-glow:rgba(255,92,114,0.22);
-  --amber:#f5a623;--amber-d:#b87600;--amber-bg:rgba(245,166,35,0.11);--amber-glow:rgba(245,166,35,0.22);
+  --red:#e8615b;--red-bg:rgba(232,97,91,0.12);--red-glow:rgba(232,97,91,0.24);
+  --amber:#f0b429;--amber-d:#b5851a;--amber-bg:rgba(240,180,41,0.12);--amber-glow:rgba(240,180,41,0.24);
 }
 :root[data-theme="light"] {
   --bg:#f1f3fb;--bg2:#ffffff;--bg3:#e8ecf7;--bg4:#dde3f2;--bg5:#d3d9ee;
   --text:#0c0e1a;--text2:#4a5278;--text3:#9aa3c8;--sep:rgba(0,0,0,0.07);
-  --blue:#d11f27;--blue-d:#a81820;--blue-bg:rgba(209,31,39,0.10);--blue-glow:rgba(209,31,39,0.2);
+  --blue:#2a5bc0;--blue-d:#1e468f;--blue-bg:rgba(42,91,192,0.10);--blue-glow:rgba(42,91,192,0.2);
   --green:#15803d;--green-d:#0f6030;--green-bg:rgba(21,128,61,0.09);--green-glow:rgba(21,128,61,0.2);
-  --red:#dc2626;--red-bg:rgba(220,38,38,0.09);--red-glow:rgba(220,38,38,0.2);
-  --amber:#c97a00;--amber-d:#9e5f00;--amber-bg:rgba(201,122,0,0.09);--amber-glow:rgba(201,122,0,0.2);
+  --red:#d23b3b;--red-bg:rgba(210,59,59,0.10);--red-glow:rgba(210,59,59,0.2);
+  --amber:#b8860b;--amber-d:#8a6508;--amber-bg:rgba(184,134,11,0.10);--amber-glow:rgba(184,134,11,0.2);
 }
 
 /* ── Base ── */
@@ -117,7 +117,7 @@ html, body {
 .header {
   display: flex; align-items: center; justify-content: space-between;
   padding: 10px 14px;
-  background: linear-gradient(135deg, #c11722, #e23744);
+  background: linear-gradient(135deg, #14264a, #1f3c72);
   border-bottom: 1px solid rgba(255,255,255,0.14);
 }
 .header-left  { display: flex; align-items: center; gap: 9px; }
@@ -208,7 +208,7 @@ html, body {
   padding: 17px 14px 13px;
   border-bottom: 1px solid var(--sep);
   position: relative; overflow: hidden;
-  background: linear-gradient(150deg, #c11722 0%, #e23744 100%);
+  background: linear-gradient(150deg, #122146 0%, #20407a 100%);
   color: #fff;
 }
 
@@ -435,7 +435,7 @@ html, body {
 .footer {
   display: flex; align-items: center; justify-content: space-between;
   padding: 7px 14px;
-  background: linear-gradient(135deg, #c11722, #e23744);
+  background: linear-gradient(135deg, #14264a, #1f3c72);
   border-top: 1px solid rgba(255,255,255,0.14);
 }
 .foot-left  { display: flex; align-items: center; gap: 7px; }
