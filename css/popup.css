@@ -12,10 +12,11 @@
   --text3:       #3e4568;
   --sep:         rgba(255,255,255,0.055);
 
-  --blue:        #5c9ef8;
-  --blue-d:      #2d6fd4;
-  --blue-bg:     rgba(92,158,248,0.11);
-  --blue-glow:   rgba(92,158,248,0.22);
+  /* Brand accent — ManekTech red (replaces the old blue accent) */
+  --blue:        #ef4b57;
+  --blue-d:      #c11722;
+  --blue-bg:     rgba(239,75,87,0.12);
+  --blue-glow:   rgba(239,75,87,0.24);
 
   --green:       #30d47e;
   --green-d:     #1b9954;
@@ -40,7 +41,7 @@
     --bg:#f1f3fb;--bg2:#ffffff;--bg3:#e8ecf7;--bg4:#dde3f2;--bg5:#d3d9ee;
     --text:#0c0e1a;--text2:#4a5278;--text3:#9aa3c8;
     --sep:rgba(0,0,0,0.07);
-    --blue:#2563eb;--blue-d:#1a4fc7;--blue-bg:rgba(37,99,235,0.09);--blue-glow:rgba(37,99,235,0.2);
+    --blue:#d11f27;--blue-d:#a81820;--blue-bg:rgba(209,31,39,0.10);--blue-glow:rgba(209,31,39,0.2);
     --green:#15803d;--green-d:#0f6030;--green-bg:rgba(21,128,61,0.09);--green-glow:rgba(21,128,61,0.2);
     --red:#dc2626;--red-bg:rgba(220,38,38,0.09);--red-glow:rgba(220,38,38,0.2);
     --amber:#c97a00;--amber-d:#9e5f00;--amber-bg:rgba(201,122,0,0.09);--amber-glow:rgba(201,122,0,0.2);
@@ -49,7 +50,7 @@
 :root[data-theme="dark"] {
   --bg:#0c0e1a;--bg2:#12152a;--bg3:#191d32;--bg4:#20253e;--bg5:#252a45;
   --text:#eceef8;--text2:#818aaa;--text3:#3e4568;--sep:rgba(255,255,255,0.055);
-  --blue:#5c9ef8;--blue-d:#2d6fd4;--blue-bg:rgba(92,158,248,0.11);--blue-glow:rgba(92,158,248,0.22);
+  --blue:#ef4b57;--blue-d:#c11722;--blue-bg:rgba(239,75,87,0.12);--blue-glow:rgba(239,75,87,0.24);
   --green:#30d47e;--green-d:#1b9954;--green-bg:rgba(48,212,126,0.11);--green-glow:rgba(48,212,126,0.22);
   --red:#ff5c72;--red-bg:rgba(255,92,114,0.11);--red-glow:rgba(255,92,114,0.22);
   --amber:#f5a623;--amber-d:#b87600;--amber-bg:rgba(245,166,35,0.11);--amber-glow:rgba(245,166,35,0.22);
@@ -57,7 +58,7 @@
 :root[data-theme="light"] {
   --bg:#f1f3fb;--bg2:#ffffff;--bg3:#e8ecf7;--bg4:#dde3f2;--bg5:#d3d9ee;
   --text:#0c0e1a;--text2:#4a5278;--text3:#9aa3c8;--sep:rgba(0,0,0,0.07);
-  --blue:#2563eb;--blue-d:#1a4fc7;--blue-bg:rgba(37,99,235,0.09);--blue-glow:rgba(37,99,235,0.2);
+  --blue:#d11f27;--blue-d:#a81820;--blue-bg:rgba(209,31,39,0.10);--blue-glow:rgba(209,31,39,0.2);
   --green:#15803d;--green-d:#0f6030;--green-bg:rgba(21,128,61,0.09);--green-glow:rgba(21,128,61,0.2);
   --red:#dc2626;--red-bg:rgba(220,38,38,0.09);--red-glow:rgba(220,38,38,0.2);
   --amber:#c97a00;--amber-d:#9e5f00;--amber-bg:rgba(201,122,0,0.09);--amber-glow:rgba(201,122,0,0.2);
@@ -112,11 +113,12 @@ html, body {
 .fade-in { animation: fadeUp 0.2s ease both; }
 
 /* ── Header ── */
+/* Brand red bar — same in light & dark; body below adapts to the theme */
 .header {
   display: flex; align-items: center; justify-content: space-between;
   padding: 10px 14px;
-  background: var(--bg2);
-  border-bottom: 1px solid var(--sep);
+  background: linear-gradient(135deg, #c11722, #e23744);
+  border-bottom: 1px solid rgba(255,255,255,0.14);
 }
 .header-left  { display: flex; align-items: center; gap: 9px; }
 .header-right { display: flex; align-items: center; gap: 2px; }
@@ -126,28 +128,28 @@ html, body {
   border-radius: 8px; overflow: hidden;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(218,31,39,0.28);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.28);
 }
 .logo svg { width: 100%; height: 100%; display: block; }
 .header-title {
-  font-size: 14px; font-weight: 700; letter-spacing: -0.015em; color: var(--text);
+  font-size: 14px; font-weight: 700; letter-spacing: -0.015em; color: #fff;
 }
 
 .badge {
   font-size: 9.5px; padding: 3px 9px; border-radius: 20px;
   font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
 }
-.badge-live   { background:var(--blue-bg);  color:var(--blue);  border:1px solid var(--blue-glow); }
-.badge-done   { background:var(--green-bg); color:var(--green); border:1px solid var(--green-glow); }
-.badge-paused { background:var(--bg4);      color:var(--text3); border:1px solid var(--sep); }
+.badge-live   { background:rgba(255,255,255,0.22); color:#fff;     border:1px solid rgba(255,255,255,0.35); }
+.badge-done   { background:rgba(255,255,255,0.92); color:#1b9954;  border:1px solid rgba(255,255,255,0.6); }
+.badge-paused { background:rgba(255,255,255,0.18); color:#fff;     border:1px solid rgba(255,255,255,0.3); }
 
 .icon-btn {
   width: 34px; height: 34px;
   display: flex; align-items: center; justify-content: center;
   background: none; border: none; cursor: pointer;
-  color: var(--text3); border-radius: 8px; transition: all 0.15s;
+  color: rgba(255,255,255,0.85); border-radius: 8px; transition: all 0.15s;
 }
-.icon-btn:hover { background: var(--bg4); color: var(--text2); }
+.icon-btn:hover { background: rgba(255,255,255,0.18); color: #fff; }
 .icon-btn svg { display: block; }
 .icon-btn.spinning svg { animation: spin 0.6s linear infinite; }
 
@@ -203,10 +205,11 @@ html, body {
    EXIT HERO
 ════════════════════════════════════════ */
 .exit-hero {
-  padding: 13px 14px 11px;
+  padding: 17px 14px 13px;
   border-bottom: 1px solid var(--sep);
   position: relative; overflow: hidden;
-  background: var(--bg2);
+  background: linear-gradient(150deg, #c11722 0%, #e23744 100%);
+  color: #fff;
 }
 
 /* Soft ambient blob behind the hero */
@@ -227,9 +230,9 @@ html, body {
 .hero-left { min-width: 0; flex: 1; }
 
 .exit-label {
-  font-size: 9px; color: var(--text3);
+  font-size: 9px; color: rgba(255,255,255,0.82);
   text-transform: uppercase; letter-spacing: 0.11em; font-weight: 700;
-  margin-bottom: 2px;
+  margin-bottom: 3px;
 }
 .exit-time {
   font-size: 32px; font-weight: 800;
@@ -246,14 +249,20 @@ html, body {
   -webkit-background-clip: text; -webkit-text-fill-color: transparent;
   background-clip: text; animation: gradShift 3s ease infinite; text-shadow: none;
 }
+/* On the red hero the time is always white for contrast (state shown by ring + label) */
+.exit-hero .exit-time {
+  color: #fff; -webkit-text-fill-color: #fff;
+  background: none; background-clip: border-box; -webkit-background-clip: border-box;
+  animation: none; text-shadow: 0 2px 14px rgba(0,0,0,0.30);
+}
 
 .exit-note { margin-top: 4px; display: flex; gap: 5px; flex-wrap: wrap; }
 .exit-note span {
   display: inline-flex; align-items: center; gap: 3px;
-  background: var(--bg4); border: 1px solid var(--sep);
+  background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.28);
   padding: 2px 9px; border-radius: 20px;
   font-size: 10px; font-variant-numeric: tabular-nums; font-weight: 500;
-  color: var(--text2);
+  color: #fff;
 }
 .extra-pill {
   background: var(--green-bg) !important; border-color: var(--green-glow) !important;
@@ -273,22 +282,24 @@ html, body {
 .hero-right { flex-shrink: 0; }
 .ring-wrap  { display: flex; flex-direction: column; align-items: center; gap: 3px; }
 .ring-svg   { display: block; }
-.ring-track { fill: none; stroke: var(--bg5); stroke-width: 5; }
+.ring-track { fill: none; stroke: rgba(255,255,255,0.28); stroke-width: 5; }
 .ring-fill  {
   fill: none; stroke-width: 5; stroke-linecap: round;
   transform: rotate(-90deg); transform-origin: 50% 50%;
   transition: stroke-dashoffset 0.9s cubic-bezier(0.4,0,0.2,1), stroke 0.4s;
 }
 .ring-label {
-  font-size: 8px; color: var(--text3); font-weight: 600;
+  font-size: 8px; color: rgba(255,255,255,0.82); font-weight: 600;
   letter-spacing: 0.05em; text-transform: uppercase; text-align: center;
 }
 
 /* Slim progress bar */
 .prog-wrap { margin-top: 7px; }
 .prog-bg {
-  height: 4px; background: var(--bg4); border-radius: 20px; overflow: hidden;
+  height: 4px; background: rgba(255,255,255,0.22); border-radius: 20px; overflow: hidden;
 }
+/* Progress fill is white on the red hero (overrides the state gradients) */
+.exit-hero .prog-fill { background: rgba(255,255,255,0.95) !important; }
 .prog-fill {
   height: 100%; border-radius: 20px;
   transition: width 0.7s cubic-bezier(0.4,0,0.2,1);
@@ -305,7 +316,7 @@ html, body {
 }
 .prog-labels {
   display: flex; justify-content: space-between;
-  margin-top: 5px; font-size: 11px; color: var(--text3);
+  margin-top: 5px; font-size: 11px; color: rgba(255,255,255,0.78);
   font-variant-numeric: tabular-nums; font-weight: 500;
 }
 
@@ -355,20 +366,20 @@ html, body {
    STAT CARDS (compact grid replaces line list)
 ════════════════════════════════════════ */
 .stat-grid {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px;
   padding: 10px 14px;
 }
 .stat-card {
   background: var(--bg3); border: 1px solid var(--sep);
-  border-radius: var(--r); padding: 9px 11px;
-  display: flex; flex-direction: column; gap: 3px; min-width: 0;
+  border-radius: var(--r2); padding: 8px 9px;
+  display: flex; flex-direction: column; gap: 2px; min-width: 0;
   animation: fadeUp 0.22s ease both;
   transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
 }
 .stat-card:hover { transform: translateY(-1px); border-color: var(--bg5); background: var(--bg4); }
 .stat-card.hl { border-color: var(--amber-glow); background: var(--amber-bg); }
 .stat-val {
-  font-size: 17px; font-weight: 800; line-height: 1.05;
+  font-size: 14.5px; font-weight: 800; line-height: 1.1;
   font-variant-numeric: tabular-nums; color: var(--text);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
@@ -378,8 +389,9 @@ html, body {
 .stat-val.amber { color: var(--amber); }
 .stat-val.muted { color: var(--text2); }
 .stat-lbl {
-  font-size: 9px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 0.07em; color: var(--text3);
+  font-size: 8px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.04em; color: var(--text3);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
 /* Leave chips — keep the leave tally compact so it never forces big scroll */
@@ -423,16 +435,16 @@ html, body {
 .footer {
   display: flex; align-items: center; justify-content: space-between;
   padding: 7px 14px;
-  background: var(--bg2);
-  border-top: 1px solid var(--sep);
+  background: linear-gradient(135deg, #c11722, #e23744);
+  border-top: 1px solid rgba(255,255,255,0.14);
 }
 .foot-left  { display: flex; align-items: center; gap: 7px; }
 .foot-right { display: flex; align-items: center; }
 .foot-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; cursor: default; }
-.foot-dot.active { background: var(--red); animation: throb 1.5s ease infinite; }
-.foot-dot.idle   { background: var(--text3); }
-.foot-date { font-size: 11px; color: var(--text3); font-weight: 500; }
-.foot-time { font-size: 13px; color: var(--text2); font-variant-numeric: tabular-nums; font-weight: 700; }
+.foot-dot.active { background: #fff; animation: throb 1.5s ease infinite; }
+.foot-dot.idle   { background: rgba(255,255,255,0.5); }
+.foot-date { font-size: 11px; color: rgba(255,255,255,0.78); font-weight: 500; }
+.foot-time { font-size: 13px; color: #fff; font-variant-numeric: tabular-nums; font-weight: 700; }
 
 .offline-badge {
   display: inline-block; margin-left: 6px;

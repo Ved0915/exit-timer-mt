@@ -344,7 +344,7 @@ function tick() {
     const ringFill = document.getElementById('ringFill');
     if (ringFill) {
       const r = 20, circ = 2 * Math.PI * r;
-      const ringColor = remainSec <= 0 ? '#30d47e' : hasOpen ? '#5c9ef8' : '#f5a623';
+      const ringColor = remainSec <= 0 ? '#30d47e' : hasOpen ? '#ffffff' : '#f5a623';
       ringFill.style.strokeDasharray  = circ;
       ringFill.style.strokeDashoffset = circ - (pct / 100) * circ;
       ringFill.style.stroke = ringColor;
@@ -468,7 +468,7 @@ function renderFull(sessions, workedSec, breakSec, remainSec, variSec, hasOpen, 
   const now = new Date();
   const rR = 20, rC = +(2 * Math.PI * rR).toFixed(2);
   const rOff = +(rC - (pct / 100) * rC).toFixed(2);
-  const rCol = remainSec <= 0 ? '#30d47e' : hasOpen ? '#5c9ef8' : '#f5a623';
+  const rCol = remainSec <= 0 ? '#30d47e' : hasOpen ? '#ffffff' : '#f5a623';
   const rSz  = 52, cx = rSz / 2;
 
   const offlineBadge = rawData._offline
@@ -489,7 +489,7 @@ function renderFull(sessions, workedSec, breakSec, remainSec, variSec, hasOpen, 
               <circle class="ring-fill" id="ringFill" cx="${cx}" cy="${cx}" r="${rR}"
                 style="stroke:${rCol};stroke-dasharray:${rC};stroke-dashoffset:${rOff}"/>
               <text id="ringPct" x="${cx}" y="${cx}" text-anchor="middle" dominant-baseline="middle"
-                style="font-size:9px;font-weight:800;fill:var(--text2);font-family:Inter,sans-serif">${pct}%</text>
+                style="font-size:9px;font-weight:800;fill:rgba(255,255,255,0.92);font-family:Inter,sans-serif">${pct}%</text>
             </svg>
             <div class="ring-label">${policyLabel}</div>
           </div>
