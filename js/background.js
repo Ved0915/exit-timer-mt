@@ -39,6 +39,8 @@ function calcRemain(sessions, targetMin) {
 // Single source of truth for badge text/color — used by both the alarm refresh
 // and the popup's live BADGE_UPDATE messages.
 function paintBadge(remainSec, hasOpen) {
+  // White badge text on all states (Chrome's badge API has no border option).
+  try { chrome.action.setBadgeTextColor({ color: '#ffffff' }); } catch (_) {}
   if (remainSec <= 0) {
     chrome.action.setBadgeText({ text: 'DONE' });
     chrome.action.setBadgeBackgroundColor({ color: '#1b9954' });
@@ -47,7 +49,7 @@ function paintBadge(remainSec, hasOpen) {
     const m = Math.floor((remainSec % 3600) / 60);
     const text = remainSec <= 60 ? `${Math.ceil(remainSec)}s` : h > 0 ? `${h}:${pad(m)}` : `${m}m`;
     chrome.action.setBadgeText({ text });
-    chrome.action.setBadgeBackgroundColor({ color: remainSec <= 60 ? '#c0392b' : '#2f5fc0' });
+    chrome.action.setBadgeBackgroundColor({ color: remainSec <= 60 ? '#b3160f' : '#d3302a' });
   } else {
     chrome.action.setBadgeText({ text: '⏸' });
     chrome.action.setBadgeBackgroundColor({ color: '#a8761a' });
