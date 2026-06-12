@@ -49,6 +49,20 @@ const SVG = {
 function stateIcon(name, color) {
   return `<div class="state-icon ${color}">${SVG[name]}</div>`;
 }
+
+// Small per-card category icons (muted, top-right)
+const CICON = {
+  clock:    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>`,
+  coffee:   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a3 3 0 0 1 0 6h-1"/><path d="M2 8h16v6a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>`,
+  trend:    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="21 12 21 7 16 7"/></svg>`,
+  exit:     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>`,
+  calendar: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`,
+  check:    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,
+  percent:  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>`,
+  zap:      `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,
+  alert:    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`
+};
+function cardIco(name) { return `<div class="stat-ico">${CICON[name]}</div>`; }
 function showLoading() {
   stopTick();
   document.getElementById('badge').style.display = 'none';
@@ -344,7 +358,7 @@ function tick() {
     const ringFill = document.getElementById('ringFill');
     if (ringFill) {
       const r = 20, circ = 2 * Math.PI * r;
-      const ringColor = remainSec <= 0 ? '#30d47e' : hasOpen ? '#ffffff' : '#f0b429';
+      const ringColor = remainSec <= 0 ? 'var(--green)' : hasOpen ? 'var(--amber)' : 'var(--blue)';
       ringFill.style.strokeDasharray  = circ;
       ringFill.style.strokeDashoffset = circ - (pct / 100) * circ;
       ringFill.style.stroke = ringColor;
@@ -455,12 +469,12 @@ function renderFull(sessions, workedSec, breakSec, remainSec, variSec, hasOpen, 
     monthHtml = `
         <div class="rl-divider">${ms.monthName || 'This Month'}</div>
         <div class="stat-grid">
-          <div class="stat-card"><div class="stat-val">${ms.workingDays}</div><div class="stat-lbl">Working Days</div></div>
-          <div class="stat-card"><div class="stat-val green">${ms.presentDays}</div><div class="stat-lbl">Present Days</div></div>
-          <div class="stat-card"><div class="stat-val blue">${ms.pct}%</div><div class="stat-lbl">Attendance</div></div>
-          ${mv !== undefined ? `<div class="stat-card"><div class="stat-val ${mvClass}">${mv >= 0 ? '+' : '-'}${minToHHMM(Math.abs(mv))}</div><div class="stat-lbl">Monthly Extra</div></div>` : ''}
-          ${ms.ot ? `<div class="stat-card"><div class="stat-val amber">${ms.ot}</div><div class="stat-lbl">OT Days</div></div>` : ''}
-          ${ms.lateCount ? `<div class="stat-card"><div class="stat-val red">${ms.lateCount}</div><div class="stat-lbl">Late Days</div></div>` : ''}
+          <div class="stat-card">${cardIco('calendar')}<div class="stat-val">${ms.workingDays}</div><div class="stat-lbl">Working Days</div></div>
+          <div class="stat-card">${cardIco('check')}<div class="stat-val green">${ms.presentDays}</div><div class="stat-lbl">Present Days</div></div>
+          <div class="stat-card">${cardIco('percent')}<div class="stat-val blue">${ms.pct}%</div><div class="stat-lbl">Attendance</div></div>
+          ${mv !== undefined ? `<div class="stat-card">${cardIco('trend')}<div class="stat-val ${mvClass}">${mv >= 0 ? '+' : '-'}${minToHHMM(Math.abs(mv))}</div><div class="stat-lbl">Monthly Extra</div></div>` : ''}
+          ${ms.ot ? `<div class="stat-card">${cardIco('zap')}<div class="stat-val amber">${ms.ot}</div><div class="stat-lbl">OT Days</div></div>` : ''}
+          ${ms.lateCount ? `<div class="stat-card">${cardIco('alert')}<div class="stat-val red">${ms.lateCount}</div><div class="stat-lbl">Late Days</div></div>` : ''}
         </div>
         ${leaveChips ? `<div class="chips">${leaveChips}</div>` : ''}`;
   }
@@ -468,7 +482,7 @@ function renderFull(sessions, workedSec, breakSec, remainSec, variSec, hasOpen, 
   const now = new Date();
   const rR = 20, rC = +(2 * Math.PI * rR).toFixed(2);
   const rOff = +(rC - (pct / 100) * rC).toFixed(2);
-  const rCol = remainSec <= 0 ? '#30d47e' : hasOpen ? '#ffffff' : '#f0b429';
+  const rCol = remainSec <= 0 ? 'var(--green)' : hasOpen ? 'var(--amber)' : 'var(--blue)';
   const rSz  = 52, cx = rSz / 2;
 
   const offlineBadge = rawData._offline
@@ -489,7 +503,7 @@ function renderFull(sessions, workedSec, breakSec, remainSec, variSec, hasOpen, 
               <circle class="ring-fill" id="ringFill" cx="${cx}" cy="${cx}" r="${rR}"
                 style="stroke:${rCol};stroke-dasharray:${rC};stroke-dashoffset:${rOff}"/>
               <text id="ringPct" x="${cx}" y="${cx}" text-anchor="middle" dominant-baseline="middle"
-                style="font-size:9px;font-weight:800;fill:rgba(255,255,255,0.92);font-family:Inter,sans-serif">${pct}%</text>
+                style="font-size:9px;font-weight:800;fill:var(--text2);font-family:Inter,sans-serif">${pct}%</text>
             </svg>
             <div class="ring-label">${policyLabel}</div>
           </div>
@@ -508,18 +522,22 @@ function renderFull(sessions, workedSec, breakSec, remainSec, variSec, hasOpen, 
 
     <div class="stat-grid fade-in">
       <div class="stat-card">
+        ${cardIco('clock')}
         <div class="stat-val blue" id="liveWorked2">${minToHHMM(workedSec / 60)}</div>
         <div class="stat-lbl">Worked</div>
       </div>
       <div class="stat-card">
+        ${cardIco('coffee')}
         <div class="stat-val muted" id="liveBreak">${minToHHMM(breakSec / 60)}</div>
         <div class="stat-lbl">Break</div>
       </div>
       <div class="stat-card">
+        ${cardIco('trend')}
         <div class="stat-val ${varClass}" id="liveVariation">${varSign}${secToHHMMSS(Math.abs(variSec))}</div>
         <div class="stat-lbl">+/− Today</div>
       </div>
       <div class="stat-card ${isHalfDay ? 'hl' : ''}">
+        ${cardIco('exit')}
         <div class="stat-val amber">${halfExitStr}</div>
         <div class="stat-lbl">Half Day Exit</div>
       </div>

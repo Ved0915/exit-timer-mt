@@ -16,3 +16,6 @@ Desktop.ini
 # Logs / temp
 *.log
 *.tmp
+
+# Local visual-test harness (not part of the extension)
+preview/
