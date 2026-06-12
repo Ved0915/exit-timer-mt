@@ -68,12 +68,52 @@ async function refreshBadge() {
   // "DONE" can't survive an extension reload or cross midnight.
   if (!state.dayKey || state.dayKey !== todayKey()) {
     chrome.storage.local.remove('bgState');
+    chrome.storage.local.remove('notifyState');
     chrome.action.setBadgeText({ text: '' });
     return;
   }
 
   const { remainSec, hasOpen } = calcRemain(state.sessions, state.targetMin);
   paintBadge(remainSec, hasOpen);
+  checkNotifications(remainSec, hasOpen);
+}
+
+// ── Auto notifications ─────────────────────────────────────────────────────
+// Fire desktop alerts at 5 / 2 / 1 min left and at target — once each, from the
+// worker so they arrive even with the popup closed. Only while a session is
+// open (the exit time is actually counting down).
+function saveNotify(n) { chrome.storage.local.set({ notifyState: n }); }
+function loadNotify() {
+  return new Promise(resolve => {
+    chrome.storage.local.get('notifyState', r => resolve(r.notifyState || null));
+  });
+}
+async function checkNotifications(remainSec, hasOpen) {
+  if (!chrome.notifications || !hasOpen) return;
+
+  const today = todayKey();
+  let n = await loadNotify();
+  if (!n || n.dayKey !== today) n = { dayKey: today };
+
+  // Fire only the most-urgent newly-crossed threshold this tick.
+  let message = null;
+  if      (remainSec <= 0   && !n.done) { n.done = true; message = 'Target reached — you can leave now! 🎉'; }
+  else if (remainSec <= 60  && !n.min1) { n.min1 = true; message = 'About 1 minute left until you can leave.'; }
+  else if (remainSec <= 120 && !n.min2) { n.min2 = true; message = 'About 2 minutes left until you can leave.'; }
+  else if (remainSec <= 300 && !n.min5) { n.min5 = true; message = 'About 5 minutes left until you can leave.'; }
+
+  // Mark already-passed thresholds as fired so they don't pop late.
+  if (remainSec <= 300) n.min5 = true;
+  if (remainSec <= 120) n.min2 = true;
+  if (remainSec <= 60)  n.min1 = true;
+  if (remainSec <= 0)   n.done = true;
+
+  saveNotify(n);
+  if (message) {
+    chrome.notifications.create('et_note', {
+      type: 'basic', iconUrl: 'icons/icon128.png', title: 'Exit Timer', message
+    });
+  }
 }
 
 // ── Offscreen document (keeps service worker alive) ───────────────────────────
@@ -121,6 +161,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   // Session expired / logout — drop stored state so the badge stops ticking.
   if (msg.type === 'CLEAR_DATA') {
     chrome.storage.local.remove('bgState');
+    chrome.storage.local.remove('notifyState');
     chrome.action.setBadgeText({ text: '' });
     sendResponse({ ok: true });
   }

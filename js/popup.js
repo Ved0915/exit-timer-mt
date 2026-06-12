@@ -228,28 +228,8 @@ function copyExitTime(exitStr) {
   }).catch(() => {});
 }
 
-// ── Desktop notifications ───────────────────────────────────────────────────
-function maybeNotify(remainSec) {
-  if (!chrome.notifications) return;
-  if (remainSec > 0 && remainSec <= 300 && !notified5min) {
-    notified5min = true;
-    chrome.notifications.create('exit5min', {
-      type: 'basic',
-      iconUrl: 'icons/icon128.png',
-      title: 'Exit Timer',
-      message: `You can leave in ${Math.ceil(remainSec / 60)} minutes!`
-    });
-  }
-  if (remainSec <= 0 && !notifiedDone) {
-    notifiedDone = true;
-    chrome.notifications.create('exitDone', {
-      type: 'basic',
-      iconUrl: 'icons/icon128.png',
-      title: 'Exit Timer',
-      message: 'Target reached! You can leave now. 🎉'
-    });
-  }
-}
+// Notifications are owned by the background worker (background.js) so they
+// fire at 5/2/1 min + done even with the popup closed — no popup-side notify.
 
 // ── Extension badge (send to background, no direct write) ───────────────────
 function updateBadge(remainSec, hasOpen) {
@@ -321,7 +301,6 @@ function tick() {
   }
 
   updateBadge(remainSec, hasOpen);
-  maybeNotify(remainSec);
 
   // Badge chip
   const badge = document.getElementById('badge');
