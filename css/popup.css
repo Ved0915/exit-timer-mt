@@ -392,6 +392,30 @@ html, body {
 }
 .chip b { color: var(--text); font-weight: 800; font-variant-numeric: tabular-nums; }
 
+/* Today's sessions — compact cards matching the stat grid */
+.sess-block { border-bottom: 1px solid var(--sep); padding-bottom: 9px; }
+.sess-card {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--bg3); border: 1px solid var(--sep);
+  border-radius: var(--r); padding: 8px 11px; margin: 0 14px 7px;
+  animation: fadeUp 0.2s ease both;
+}
+.sess-card:last-child { margin-bottom: 0; }
+.sess-time {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 12px; font-weight: 600; color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.sess-arrow { color: var(--text3); }
+.sess-dur {
+  font-size: 12.5px; font-weight: 800; color: var(--text2);
+  font-variant-numeric: tabular-nums;
+}
+.sess-break {
+  text-align: center; font-size: 10px; color: var(--text3);
+  font-weight: 600; margin: -2px 14px 8px;
+}
+
 
 /* ════════════════════════════════════════
    FOOTER

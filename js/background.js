@@ -61,9 +61,10 @@ async function refreshBadge() {
     return;
   }
 
-  // Day rolled over — yesterday's data is stale. Wipe it and show nothing until
-  // today's sessions are fetched, so an old open session can't tick across midnight.
-  if (state.dayKey && state.dayKey !== todayKey()) {
+  // Stale data → wipe and show nothing until today's sessions are fetched.
+  // Covers a different day AND legacy state with no dayKey, so a leftover
+  // "DONE" can't survive an extension reload or cross midnight.
+  if (!state.dayKey || state.dayKey !== todayKey()) {
     chrome.storage.local.remove('bgState');
     chrome.action.setBadgeText({ text: '' });
     return;

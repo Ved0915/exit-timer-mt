@@ -419,14 +419,14 @@ function renderFull(sessions, workedSec, breakSec, remainSec, variSec, hasOpen, 
     const isOpen = !outStr;
 
     return `
-      <div class="rl-row">
-        <span class="rl-lbl">
+      <div class="sess-card">
+        <span class="sess-time">
           <span class="sess-dot ${isOpen ? 'active' : 'closed'}"></span>
-          ${inStr} → ${isOpen ? `<span class="sess-now">now</span>` : outStr}
+          ${inStr} <span class="sess-arrow">→</span> ${isOpen ? `<span class="sess-now">now</span>` : outStr}
         </span>
-        <span class="rl-val">${minToHHMM(durMin)}</span>
+        <span class="sess-dur">${minToHHMM(durMin)}</span>
       </div>
-      ${breakAfter !== null ? `<div class="rl-break">☕ ${minToHHMM(breakAfter)}</div>` : ''}`;
+      ${breakAfter !== null ? `<div class="sess-break">☕ ${minToHHMM(breakAfter)} break</div>` : ''}`;
   }).join('');
 
   // Monthly summary
@@ -526,8 +526,8 @@ function renderFull(sessions, workedSec, breakSec, remainSec, variSec, hasOpen, 
     </div>
     ${monthHtml}
 
-    <div class="row-list fade-in" id="sessionsBlock" style="display:${showSessions ? 'block' : 'none'}">
-      <div class="month-header"><span class="month-title">Today's Sessions</span></div>
+    <div class="sess-block fade-in" id="sessionsBlock" style="display:${showSessions ? 'block' : 'none'}">
+      <div class="rl-divider">Today's Sessions</div>
       ${sessHtml}
     </div>`);
 
