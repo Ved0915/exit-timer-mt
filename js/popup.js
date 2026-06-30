@@ -38,14 +38,39 @@ function timeAgo(ms) {
 let tickTimer        = null;
 let autoRefreshTimer = null;
 let rawData          = null;
-let showSessions     = false;
+let showSessions     = (() => { try { return localStorage.getItem('et_showSessions') === '1'; } catch (_) { return false; } })();
 let notified5min     = false;
 let notifiedDone     = false;
 
 // ── DOM helpers ─────────────────────────────────────────────────────────────
-function openSite() {
+// Open a fresh ManekTech attendance tab.
+function createSiteTab() {
   chrome.tabs.create({ url: 'http://mtworks.manektech.com/inout-summary.aspx' });
 }
+
+// Find an existing ManekTech tab in ANY window. If found, switch to it (focus
+// its window + activate it), optionally reload it. If none exists, open a fresh
+// one. Used everywhere instead of blindly creating a new tab or reloading the
+// current (random) active tab — e.g. the "session expired" login button.
+async function focusOrOpenMTWorks(reload = false) {
+  let tabs = [];
+  try { tabs = await chrome.tabs.query({ url: '*://mtworks.manektech.com/*' }); } catch (_) {}
+  const tab = tabs && tabs[0];
+  if (tab) {
+    try {
+      if (tab.windowId != null) await chrome.windows.update(tab.windowId, { focused: true });
+      await chrome.tabs.update(tab.id, { active: true });
+      if (reload) await chrome.tabs.reload(tab.id);
+    } catch (_) { createSiteTab(); }
+    return tab;
+  }
+  createSiteTab();
+  return null;
+}
+
+// Back-compat name used by the "Open Attendance Page" buttons: jump to an
+// existing tab (no forced reload) or open a new one.
+function openSite() { focusOrOpenMTWorks(false); }
 function setContent(html) {
   document.getElementById('content').innerHTML = html;
 }
@@ -117,8 +142,9 @@ function showSessionExpired() {
       <button class="btn" id="ob">Refresh &amp; Login</button>
     </div>`);
   document.getElementById('ob').onclick = async () => {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (tab) { chrome.tabs.reload(tab.id); } else { openSite(); }
+    // Switch to an existing ManekTech tab (any window) and reload it; only
+    // open a new one if none is open. Never reloads the current random tab.
+    await focusOrOpenMTWorks(true);
     startAutoRefresh(); // resume polling so we pick up data once re-logged in
   };
 }
@@ -640,6 +666,7 @@ function renderFull(sessions, workedSec, breakSec, remainSec, variSec, hasOpen, 
     sync();
     sessBtn.onclick = () => {
       showSessions = !showSessions;
+      try { localStorage.setItem('et_showSessions', showSessions ? '1' : '0'); } catch (_) {}
       const block = document.getElementById('sessionsBlock');
       if (block) block.style.display = showSessions ? 'block' : 'none';
       sync();
