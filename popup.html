@@ -5,6 +5,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/flatpickr.min.css">
   <link rel="stylesheet" href="css/popup.css">
 </head>
 <body>
@@ -25,23 +26,43 @@
       <span class="badge" id="badge" style="display:none;"></span>
     </div>
     <div class="header-right">
-      <button class="icon-btn" id="sessionsBtn" title="Show/hide today's sessions">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
-          <circle cx="3" cy="6" r="1" fill="currentColor" stroke="none"/><circle cx="3" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="3" cy="18" r="1" fill="currentColor" stroke="none"/>
+      <button class="icon-btn" id="themeBtn" title="Toggle theme"><!-- filled by JS --></button>
+      <button class="icon-btn" id="fmtBtn" title="Toggle 12/24-hour" style="font-size:11px;font-weight:700;">24h</button>
+
+      <button class="icon-btn" id="menuBtn" title="Menu" aria-haspopup="true" aria-expanded="false">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+          <circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/>
         </svg>
       </button>
-      <button class="icon-btn" id="themeBtn" title="Toggle theme">
-        <!-- filled by JS -->
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
-        </svg>
-      </button>
-      <button class="icon-btn" id="refreshBtn" title="Refresh data">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
-        </svg>
-      </button>
+
+      <div class="menu-pop" id="menuPop" role="menu">
+        <button class="menu-item" id="refreshBtn" role="menuitem">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+          </svg>
+          <span>Refresh</span>
+        </button>
+        <button class="menu-item" id="sessionsBtn" role="menuitem">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+            <circle cx="3" cy="6" r="1" fill="currentColor" stroke="none"/><circle cx="3" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="3" cy="18" r="1" fill="currentColor" stroke="none"/>
+          </svg>
+          <span id="sessionsLabel">Show sessions</span>
+        </button>
+        <button class="menu-item" id="manualBtn" role="menuitem">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/><line x1="17" y1="4" x2="21" y2="4"/><line x1="19" y1="2" x2="19" y2="6"/>
+          </svg>
+          <span>Add manual time</span>
+        </button>
+        <div class="menu-sep"></div>
+        <button class="menu-item" id="exportBtn" role="menuitem">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          <span>Export month (Excel)</span>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -62,6 +83,10 @@
     </div>
   </div>
 
+  <div class="credit">Designed &amp; developed by <b>Vedprakash Dhaka</b></div>
+
+  <script src="js/flatpickr.min.js"></script>
+  <script src="js/exceljs.min.js"></script>
   <script src="js/popup.js"></script>
 </body>
 </html>
