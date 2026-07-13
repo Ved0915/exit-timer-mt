@@ -1,0 +1,152 @@
+========================================================================
+ ManekTech Exit Timer - INSTALL
+========================================================================
+
+  Setup is: run deploy.bat, then load the folder in Chrome ONCE.
+  After that, updates are just deploy.bat + one reload click.
+
+
+------------------------------------------------------------------------
+ WHY NOT JUST "LOAD UNPACKED" THE DOWNLOADED FOLDER?
+------------------------------------------------------------------------
+
+Chrome runs an unpacked extension straight out of the folder you point it
+at. Move, rename, or delete that folder and Chrome disables the
+extension. If you loaded it from your Downloads or repo folder, tidying up
+later silently breaks it.
+
+So deploy.bat copies just the runtime files into a permanent home:
+
+    C:\Users\<you>\AppData\Local\ExitTimer
+
+Chrome loads it from there. The folder you downloaded is only the source -
+delete it, move it, re-clone it whenever you like.
+
+
+------------------------------------------------------------------------
+ STEP 1 - RUN deploy.bat
+------------------------------------------------------------------------
+
+Double-click:
+
+    deploy.bat
+
+(Sits next to this file. No paths to edit - it works from anywhere.)
+
+It copies the files, then, because this is your first time:
+
+  - opens an Explorer window on the install folder
+  - copies that folder's path to your clipboard
+
+Leave that Explorer window open - Step 2 uses it.
+
+
+------------------------------------------------------------------------
+ STEP 2 - LOAD IT IN CHROME (one time only)
+------------------------------------------------------------------------
+
+  1. Open        chrome://extensions
+
+  2. If an old "ManekTech Exit Timer" card is already there and its
+     "Loaded from:" points at your download/repo folder, click REMOVE.
+
+     (Removing also clears its stored data - theme, 12/24h setting, and
+     manual time entries. If you have manual entries you need, export the
+     month to Excel first:  popup menu ... -> Export month.)
+
+  3. Turn ON     "Developer mode"        (toggle, top-right)
+
+  4. Install, either way:
+
+       A) DRAG the ExitTimer folder from the open Explorer window and
+          DROP it anywhere on the chrome://extensions page.    <- easiest
+
+       B) Click "Load unpacked", press Ctrl+V (the path is already on
+          your clipboard), press Enter.
+
+  5. Click the puzzle-piece icon in the Chrome toolbar and PIN Exit Timer,
+     so the countdown badge is always visible.
+
+Done. The source folder is now free to delete.
+
+
+------------------------------------------------------------------------
+ UPDATING AFTER A CODE CHANGE
+------------------------------------------------------------------------
+
+  1. Pull / edit the source.
+  2. Double-click                deploy.bat
+     (it sees the extension is already loaded and just refreshes files)
+  3. Open                        chrome://extensions
+  4. Click the circular RELOAD arrow on the Exit Timer card.
+
+Your settings and manual time entries survive - deploy.bat refreshes the
+files inside the existing folder, so Chrome keeps the same extension ID
+and its stored data.
+
+
+------------------------------------------------------------------------
+ EVERYDAY USE
+------------------------------------------------------------------------
+
+  1. Log in to   http://mtworks.manektech.com/inout-summary.aspx
+  2. Click the Exit Timer icon.
+  3. The toolbar badge counts down your remaining time even after the
+     popup is closed.
+
+  Header:
+    sun / moon        light / dark theme        (remembered)
+    12h / 24h         time format               (remembered)
+    ...               menu
+
+  Menu ( ... ):
+    Refresh                 re-read the portal
+    Show / Hide sessions    per-punch breakdown (remembered)
+    Add manual time         log work done off the portal (WFH / 2nd shift)
+    Export month (Excel)    styled workbook with charts
+
+The target is 8h 15m of WORKED time. Breaks are excluded - they push the
+clock-time you leave at, not the hours you owe.
+
+
+------------------------------------------------------------------------
+ REMOVING IT
+------------------------------------------------------------------------
+
+  1. chrome://extensions  ->  Remove  on the Exit Timer card.
+  2. Optionally delete    C:\Users\<you>\AppData\Local\ExitTimer
+
+Nothing is written outside that folder, Chrome's own profile, and the
+browser's local storage.
+
+
+------------------------------------------------------------------------
+ FAQ
+------------------------------------------------------------------------
+
+Q: Can the whole install be automatic - no "Load unpacked" click at all?
+A: No, not for free. Chrome deliberately blocks scripts from installing
+   extensions (it is an anti-malware guard). We tried the enterprise
+   policy route: Chrome only accepts http/https update URLs, so it needs
+   a web server or a paid Chrome Web Store listing ($5 one-off). Neither
+   is worth it for an in-house tool. One click, once, is the honest
+   trade-off.
+
+Q: Can I delete the folder I downloaded?
+A: Yes - after Step 2. Chrome runs the copy in
+   %LOCALAPPDATA%\ExitTimer. Keep the source only if you want to make
+   further code changes.
+
+Q: The badge on the icon disappeared.
+A: Open the popup once - that reseeds the background worker. If it keeps
+   happening, hit the reload arrow on the extension card.
+
+Q: "Session expired".
+A: Your portal login timed out. Click "Refresh & Login" - it switches to
+   your open ManekTech tab (or opens one) so you can sign back in.
+
+Q: I work from home - there are no portal punches at all.
+A: Menu -> Add manual time. Entries are stored per day and merge with any
+   portal punches you do have, so an office half-day plus an evening WFH
+   shift add up to one exit time. They also show up on the "Manual
+   Entries" sheet of the Excel export.

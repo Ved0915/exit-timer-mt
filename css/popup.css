@@ -608,3 +608,13 @@ html, body {
 .numInputWrapper span.arrowDown:after { border-top-color: var(--text2) !important; }
 .numInputWrapper:hover { background: var(--bg4) !important; }
 .flatpickr-calendar.hasTime.noCalendar { width: 200px !important; }
+
+/* ── Manual backup / restore ─────────────────────────────────────────────── */
+.manual-io { display: flex; gap: 8px; }
+.manual-io .btn { flex: 1; }
+.btn-sm { padding: 7px 10px; font-size: 12px; }
+.manual-warn {
+  font-size: 10px; line-height: 1.5; text-align: center;
+  color: var(--amber); background: var(--amber-bg);
+  border: 1px solid var(--amber-glow); border-radius: 8px; padding: 6px 8px;
+}

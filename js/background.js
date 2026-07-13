@@ -157,6 +157,11 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg.type === 'STORE_DATA') {
     const state = { ...msg.data, fetchedAt: Date.now() };
     saveState(state);
+    // Keep the ticker alive + repaint immediately so the badge reflects new
+    // (incl. manual) sessions even after the popup closes.
+    ensureAlarm();
+    ensureOffscreen();
+    refreshBadge();
     sendResponse({ ok: true });
   }
   // Popup ticks badge via message — avoids race with background's refreshBadge.
@@ -173,6 +178,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     sendResponse({ ok: true });
   }
   if (msg.type === 'KEEPALIVE') {
+    ensureOffscreen(); // recreate if Chrome closed it
     refreshBadge();
   }
   return false;

@@ -284,38 +284,56 @@ function deleteManualSession(dayKey, inMs) {
 // When there's no office data at all today (no tab, not punched) but manual
 // sessions exist, build a minimal rawData from manual alone so the timer still
 // works for a fully-remote / split day. Returns true if it rendered.
-function serveManualOnly() {
+function serveManualOnly(silent) {
   const dayKey = todayKey();
   const manual = getManualFor(dayKey);
   if (!manual.length) return false;
-  // Reuse last known target if cached, else default 9h15m.
+  // Fixed 8h15m net-work target — same as office days.
   const cached = loadCachedData();
-  const targetMin = (cached?.dayKey === dayKey ? cached.targetMin : null) || (9 * 60 + 15);
+  const targetMin = 8 * 60 + 15;
+  // If today's office punches are cached, keep them — applyManualToRaw merges
+  // manual ON TOP of office. Only truly office-less days run on manual alone.
+  const office = (cached?.dayKey === dayKey && cached.sessions?.length)
+    ? cached.sessions.filter(s => !s.manual) : [];
   rawData = {
-    sessions: [], _officeSessions: [],
+    sessions: office.slice(), _officeSessions: office,
     targetMin, dayKey,
     monthlySummary: cached?.monthlySummary || null,
-    fetchedAt: Date.now(), _manualOnly: true
+    fetchedAt: Date.now(), _manualOnly: office.length === 0
   };
   applyManualToRaw();
-  startTick();
+  // On a silent refresh with the live view already up, just tick (no flicker).
+  if (silent && document.getElementById('liveWorked')) tick(); else startTick();
   return true;
 }
 
-// Merge today's manual sessions into the office tracker sessions on rawData,
-// sorted by start time, so worked / break / exit-time calc treats them as one
-// timeline. Called after every fetch and after any manual edit.
+// Merge today's office (MTWorks) punches AND manual entries into ONE timeline,
+// sorted by start time. Office half-day + a manual 2nd shift (WFH) combine so
+// worked / break / exit-time cover both. Manual is ADDED to office, never
+// replaces it.
 function applyManualToRaw() {
   if (!rawData) return;
   const dayKey = rawData.dayKey || todayKey();
   const manual = getManualFor(dayKey);
-  // Office sessions are the non-manual ones; rebuild from them + manual each time
-  // so re-applying is idempotent.
+  // Office sessions are the non-manual ones; rebuild each time so re-applying
+  // is idempotent.
   const office = (rawData._officeSessions || rawData.sessions || []).filter(s => !s.manual);
   rawData._officeSessions = office;
-  const merged = office.concat(manual.map(m => ({ inMs: m.inMs, outMs: m.outMs, manual: true, note: m.note })))
+
+  const merged = office
+    .concat(manual.map(m => ({ inMs: m.inMs, outMs: m.outMs, manual: true, note: m.note })))
     .sort((a, b) => a.inMs - b.inMs);
   rawData.sessions = merged;
+
+  // Push the merged timeline (office + manual) to the background worker so the
+  // badge keeps ticking after the popup closes — including fully-remote days
+  // where the only sessions are manual.
+  try {
+    chrome.runtime.sendMessage({
+      type: 'STORE_DATA',
+      data: { sessions: merged, targetMin: rawData.targetMin, dayKey }
+    });
+  } catch (_) {}
 }
 
 // ── Copy exit time to clipboard ─────────────────────────────────────────────
@@ -507,7 +525,7 @@ function renderFull(sessions, workedSec, breakSec, remainSec, variSec, hasOpen, 
   const todayLeave = rawData.monthlySummary?.leaveMap?.[todayStr] || null;
   const isHalfDay  = todayLeave && todayLeave.startsWith('half');
 
-  const policyLabel = targetMin === (8 * 60 + 15) ? '8h 15m shift' : '9h 15m shift';
+  const policyLabel = '8h 15m shift';
 
   // Sessions HTML
   const sessHtml = sessions.map((s, i) => {
@@ -697,19 +715,17 @@ async function loadData(silent = false) {
   if (!tab) {
     // No ManekTech tab open anywhere → show today's cached data if we have it.
     if (refreshBtn) refreshBtn.classList.remove('spinning');
-    if (!silent) {
-      const cached = loadCachedData();
-      if (cached && cached.dayKey === todayKey()) {
-        rawData = { ...cached, _offline: true };
-        applyManualToRaw();
-        startTick();
-      } else if (serveManualOnly()) {
-        // No office data today, but manual sessions exist → run on those alone.
-      } else if (cached) {
-        showNewDay();
-      } else {
-        showNotOnSite();
-      }
+    const cached = loadCachedData();
+    if (cached && cached.dayKey === todayKey()) {
+      rawData = { ...cached, _offline: true };
+      applyManualToRaw();
+      if (silent && document.getElementById('liveWorked')) tick(); else startTick();
+    } else if (serveManualOnly(silent)) {
+      // Fully-remote day: no office data, but manual sessions exist → run on
+      // those alone. Works during silent auto-refresh too so the timer survives
+      // tab switches / reopening the popup on a WFH day.
+    } else if (!silent) {
+      if (cached) showNewDay(); else showNotOnSite();
     }
     return;
   }
@@ -730,25 +746,37 @@ async function loadData(silent = false) {
 
   const result = results?.[0]?.result;
 
+  // Fully-remote day: no office punches, only a manual entry. If today has
+  // manual sessions, keep the timer running on those no matter what the office
+  // fetch says (expired session / no punches / errors) — never kill it.
+  const hasManualToday = getManualFor(todayKey()).length > 0;
+
   // Terminal — handle even during silent auto-refresh so the timer/badge
-  // stop ticking on stale data the moment the session dies.
-  if (result?.error === 'session_expired') { handleSessionExpired(); return; }
+  // stop ticking on stale data the moment the session dies. But if manual
+  // sessions exist, run on those instead of showing the login screen.
+  if (result?.error === 'session_expired') {
+    if (hasManualToday) { serveManualOnly(silent); return; }
+    handleSessionExpired();
+    return;
+  }
 
   if (!result) {
-    if (!serveCachedToday(silent)) { if (!silent) showErrorState('load_failed'); }
+    if (serveCachedToday(silent)) return;
+    if (hasManualToday && serveManualOnly(silent)) return;
+    if (!silent) showErrorState('load_failed');
     return;
   }
   if (result.error) {
     // Transient miss (e.g. read off a non-summary page) — keep today's cached
     // data on screen instead of flashing an error.
     if (serveCachedToday(silent)) return;
-    if (!silent && serveManualOnly()) return;
+    if (hasManualToday && serveManualOnly(silent)) return;
     if (!silent) showErrorState(result.error, result.detail);
     return;
   }
   if (!result.sessions?.length) {
     if (serveCachedToday(silent)) return;
-    if (!silent && serveManualOnly()) return;
+    if (hasManualToday && serveManualOnly(silent)) return;
     if (!silent) showErrorState('no_sessions');
     return;
   }
@@ -762,14 +790,7 @@ async function loadData(silent = false) {
 
   rawData = result;
   saveCachedData(result);
-  applyManualToRaw();
-
-  try {
-    chrome.runtime.sendMessage({
-      type: 'STORE_DATA',
-      data: { sessions: rawData.sessions, targetMin: result.targetMin, dayKey: result.dayKey }
-    });
-  } catch (_) {}
+  applyManualToRaw(); // merges manual + pushes STORE_DATA to background
 
   if (silent && document.getElementById('liveWorked')) {
     tick();
@@ -901,23 +922,29 @@ function mergeManualIntoExport(R) {
   const manualRows = [];
   const wdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-  // Only manual entries within the exported month.
+  // Manual sheet lists the FULL stored history (every month), so past-month
+  // entries stay accessible even though office data is only for R.monthKey.
   Object.keys(all).forEach(dateStr => {
-    if (!dateStr.startsWith(R.monthKey)) return;
     const list = all[dateStr] || [];
     const dObj = new Date(dateStr + 'T00:00:00');
     list.forEach(m => {
       manualRows.push({
         date: dateStr, weekday: wdays[dObj.getDay()],
+        monthKey: dateStr.slice(0, 7),
         inMs: m.inMs, outMs: m.outMs,
         durMin: m.outMs ? Math.round((m.outMs - m.inMs) / 60000) : null,
         open: !m.outMs, note: m.note || ''
       });
     });
 
+    // Day-merge + Sessions rows only for the exported month (office days exist
+    // only for R.monthKey).
+    if (!dateStr.startsWith(R.monthKey)) return;
+
     // Reflect into the matching day row (if the month-fetcher produced one).
     const day = R.days.find(d => d.date === dateStr);
     if (!day) return;
+    // Manual is ADDED on top of office (office half-day + manual 2nd shift).
     let addWorked = 0;
     list.forEach(m => { if (m.outMs) addWorked += (m.outMs - m.inMs) / 60000; });
     addWorked = Math.round(addWorked);
@@ -1254,30 +1281,33 @@ async function buildWorkbook(R) {
   pres.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: 9 } };
 
   // ── Manual Entries (split-shift / WFH) — for regularisation reference ────────
+  // Full stored history across all months — filter by Month in Excel.
   const man = wb.addWorksheet('Manual Entries', { views: [{ state: 'frozen', ySplit: 1 }] });
   man.columns = [
-    { header: 'Date', width: 12 }, { header: 'Day', width: 7 },
+    { header: 'Month', width: 10 }, { header: 'Date', width: 12 }, { header: 'Day', width: 7 },
     { header: 'Start', width: 12 }, { header: 'End', width: 12 },
-    { header: 'Duration', width: 11 }, { header: 'Open?', width: 8 }, { header: 'Note', width: 32 },
+    { header: 'Duration', width: 11 }, { header: 'Open?', width: 8 }, { header: 'Note', width: 40 },
   ];
   styleHeader(man.getRow(1));
   const mrows = R.manualRows || [];
   if (!mrows.length) {
-    const row = man.addRow(['—', '—', null, null, null, '', 'No manual entries this month']);
+    const row = man.addRow(['—', '—', '—', null, null, null, '', 'No manual entries stored']);
     row.eachCell(c => { c.border = thin(); });
   } else {
     mrows.forEach((m, i) => {
-      const row = man.addRow([ m.date, m.weekday, xlTimeOfDay(m.inMs),
+      const row = man.addRow([ m.monthKey, m.date, m.weekday, xlTimeOfDay(m.inMs),
         m.open ? null : xlTimeOfDay(m.outMs), m.durMin == null ? null : xlDur(m.durMin),
         m.open ? 'Yes' : '', m.note ]);
-      row.getCell(3).numFmt = FMT_TIME; row.getCell(4).numFmt = FMT_TIME; row.getCell(5).numFmt = FMT_DUR;
+      row.getCell(4).numFmt = FMT_TIME; row.getCell(5).numFmt = FMT_TIME; row.getCell(6).numFmt = FMT_DUR;
+      // Highlight the currently-exported month's rows.
+      if (m.monthKey === R.monthKey) row.getCell(1).font = { bold: true, color: { argb: C.brand2 } };
       if (i % 2 === 1) row.eachCell(c => { c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: C.band } }; });
       row.eachCell(c => { c.border = thin(); });
-      if (m.open) row.getCell(6).font = { bold: true, color: { argb: C.amber } };
+      if (m.open) row.getCell(7).font = { bold: true, color: { argb: C.amber } };
     });
-    addTotals(man, [5], {}, 'TOTAL');
+    addTotals(man, [6], {}, 'TOTAL');
   }
-  man.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: 7 } };
+  man.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: 8 } };
 
   return await wb.xlsx.writeBuffer();
 }
@@ -1407,6 +1437,89 @@ function showExportToast(msg, isError) {
   setTimeout(() => { t.className = t.className.replace(' show', ''); }, 2600);
 }
 
+// ── Manual-entry backup / restore ────────────────────────────────────────────
+// Chrome DELETES an extension's storage when the extension is removed, and a
+// reinstall from a different folder gets a different extension ID (= a fresh,
+// empty store). Manual entries are hand-typed data that must not die with a
+// reinstall, so they can be written to / read from a JSON file.
+function backupManual() {
+  const all = loadAllManual();
+  const days = Object.keys(all).length;
+  if (!days) { showExportToast('No manual entries to back up.', true); return; }
+
+  const payload = JSON.stringify({
+    _type: 'exit-timer-manual-entries',
+    _version: 1,
+    _exportedAt: new Date().toISOString(),
+    entries: all
+  }, null, 2);
+
+  const blob = new Blob([payload], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'exit-timer-manual-' + todayKey() + '.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 3000);
+
+  showExportToast(`Backed up ${days} day${days === 1 ? '' : 's'} ✓`, false);
+}
+
+// Merge a backup file back in. Existing days are kept; entries are de-duped by
+// start time, so restoring the same file twice is harmless.
+function restoreManual(onDone) {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'application/json,.json';
+  input.onchange = () => {
+    const file = input.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      let parsed;
+      try { parsed = JSON.parse(reader.result); }
+      catch (_) { showExportToast('That file is not valid JSON.', true); return; }
+
+      // Accept both the wrapped backup format and a bare { date: [...] } map.
+      const incoming = parsed?.entries && typeof parsed.entries === 'object'
+        ? parsed.entries
+        : (parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : null);
+      if (!incoming) { showExportToast('No manual entries found in that file.', true); return; }
+
+      const all = loadAllManual();
+      let added = 0;
+      Object.keys(incoming).forEach(dateStr => {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return;
+        const list = Array.isArray(incoming[dateStr]) ? incoming[dateStr] : [];
+        const existing = Array.isArray(all[dateStr]) ? all[dateStr] : [];
+        const seen = new Set(existing.map(s => s.inMs));
+        list.forEach(s => {
+          if (typeof s?.inMs !== 'number' || seen.has(s.inMs)) return;
+          existing.push({
+            inMs: s.inMs,
+            outMs: typeof s.outMs === 'number' ? s.outMs : null,
+            manual: true,
+            note: typeof s.note === 'string' ? s.note : ''
+          });
+          seen.add(s.inMs);
+          added++;
+        });
+        if (existing.length) {
+          existing.sort((a, b) => a.inMs - b.inMs);
+          all[dateStr] = existing;
+        }
+      });
+
+      if (!added) { showExportToast('Nothing new — already restored.', false); return; }
+      saveAllManual(all);
+      showExportToast(`Restored ${added} entr${added === 1 ? 'y' : 'ies'} ✓`, false);
+      if (typeof onDone === 'function') onDone();
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
 // ── Time format toggle (12h AM/PM ↔ 24h), persisted in et_timeFmt ────────────
 (function initTimeFmt() {
   function applyFmt(f) {
@@ -1442,7 +1555,7 @@ function msToInputStr(ms) {
   return pad(d.getHours()) + ':' + pad(d.getMinutes());
 }
 
-const DEFAULT_NOTE = 'Managing client shift CWS - Martin';
+const DEFAULT_NOTE = 'Managing client Shift - Creative Web Services Llc - Monthly - Laravel - Yo (3616)';
 function openManualModal() {
   const dayKey = (rawData && rawData.dayKey) || todayKey();
 
@@ -1464,6 +1577,11 @@ function openManualModal() {
       <div id="mErr" class="manual-err"></div>
       <button class="btn" id="mAdd">Add session</button>
       <div class="manual-list" id="mList"></div>
+      <div class="manual-io">
+        <button class="btn btn-secondary btn-sm" id="mBackup" title="Save all manual entries to a JSON file">Back up</button>
+        <button class="btn btn-secondary btn-sm" id="mRestore" title="Load manual entries from a backup file">Restore</button>
+      </div>
+      <div class="manual-warn">Removing the extension wipes its stored data. Back up before reinstalling.</div>
       <button class="btn btn-secondary" id="mClose">Close</button>
     </div>`;
   document.body.appendChild(ov);
@@ -1536,6 +1654,12 @@ function openManualModal() {
     ov.remove();
   }
   document.getElementById('mClose').onclick = closeModal;
+
+  document.getElementById('mBackup').onclick = backupManual;
+  document.getElementById('mRestore').onclick = () => {
+    restoreManual(() => { reapplyManual(); renderList(); });
+  };
+
   ov.addEventListener('click', (e) => { if (e.target === ov) closeModal(); });
   document.addEventListener('keydown', function esc(e) {
     if (e.key === 'Escape') { closeModal(); document.removeEventListener('keydown', esc); }

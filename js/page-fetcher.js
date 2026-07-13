@@ -69,9 +69,9 @@
     sessions.push({ inMs, outMs });
   });
 
-  // Policy: read from page if available
-  const policyShift = list[0]?.PolicyShift;
-  const targetMin = policyShift == 1 ? (8 * 60 + 15) : (9 * 60 + 15);
+  // Fixed target: must WORK 8h15m net (breaks excluded). Exit = when worked
+  // time reaches 8h15m; breaks just push the exit clock-time later.
+  const targetMin = 8 * 60 + 15;
 
   // Monthly summary from calendar if on summary page
   let monthlySummary = null;

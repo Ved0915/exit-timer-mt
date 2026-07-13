@@ -77,7 +77,7 @@
   } catch (_) {}
 
   // ── Daily fetch ──
-  let targetMin = 9 * 60 + 15; // refined as PolicyShift seen
+  const targetMin = 8 * 60 + 15; // fixed: must work 8h15m net (breaks excluded)
   async function fetchDay(d) {
     const inDateTime = months[month] + ' ' + d + ' ' + year;
     const resp = await fetch('/DataService.asmx/InOutSelectByDateAsc', {
@@ -119,8 +119,6 @@
       if (isNaN(inMs)) return;
       if (outMs != null && (isNaN(outMs) || outMs < inMs)) return;
       sessions.push({ inMs, outMs });
-      if (row.PolicyShift == 1) targetMin = 8 * 60 + 15;
-      else if (row.PolicyShift != null) targetMin = 9 * 60 + 15;
     });
 
     let workedMin = 0, breakMin = 0;

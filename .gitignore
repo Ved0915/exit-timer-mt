@@ -19,3 +19,7 @@ Desktop.ini
 
 # Local visual-test harness (not part of the extension)
 preview/
+
+# Personal manual-time backups (created by the popup's "Back up" button)
+exit-timer-manual-*.json
+manual-entries-backup.json
